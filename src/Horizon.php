@@ -158,7 +158,9 @@ class Horizon
     private static function storeHorizonConfiguration($configKey, $config)
     {
         config(["{$configKey}.horizon" => array_merge($config, [
-            'options' => ['prefix' => config('horizon.prefix') ?: 'horizon:'],
+            'options' => [
+                'prefix' => config('horizon.prefix') ?: 'horizon:',
+            ],
         ])]);
     }
 }
