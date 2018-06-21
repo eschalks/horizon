@@ -53,6 +53,16 @@ class Horizon
     ];
 
     /**
+     * Places in the configuration where Redis connection information may be found.
+     *
+     * @var array
+     */
+    public static $configKeys = [
+        'database.redis',
+        'database.redis.clusters',
+    ];
+
+    /**
      * Determine if the given request can access the Horizon dashboard.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -87,13 +97,15 @@ class Horizon
      */
     public static function use($connection)
     {
-        if (is_null($config = config("database.redis.{$connection}"))) {
-            throw new Exception("Redis connection [{$connection}] has not been configured.");
+        $config = null;
+        foreach(self::$configKeys as $configKey) {
+            if (!is_null($config = config("{$configKey}.{$connection}"))) {
+                self::storeHorizonConfiguration($configKey, $config);
+                return;
+            }
         }
 
-        config(['database.redis.horizon' => array_merge($config, [
-            'options' => ['prefix' => config('horizon.prefix') ?: 'horizon:'],
-        ])]);
+        throw new Exception("Redis connection [{$connection}] has not been configured.");
     }
 
     /**
@@ -135,5 +147,18 @@ class Horizon
         static::$smsNumber = $number;
 
         return new static;
+    }
+
+    /**
+     * Copies the provided configuration to a new connection that will be used by Horizon.
+     *
+     * @param string $configKey
+     * @param array $config
+     */
+    private static function storeHorizonConfiguration($configKey, $config)
+    {
+        config(["{$configKey}.horizon" => array_merge($config, [
+            'options' => ['prefix' => config('horizon.prefix') ?: 'horizon:'],
+        ])]);
     }
 }
